@@ -19,6 +19,7 @@ var inject = function () {
                 opened.push(self.state.res_id);
                 localStorage['odoosoup.task.opened'] = JSON.stringify(opened);
                 var note = localStorage['odoosoup.task.'+self.state.res_id] || '';
+                $('textarea.odoosoup_task_note').remove();
                 $('<textarea class="odoosoup_task_note"/>').val(note).insertBefore($('h1', self.$el)).on('input', function () {
                     if (this.value !== note) {
                         if (this.value.trim()) {
