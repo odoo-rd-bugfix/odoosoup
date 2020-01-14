@@ -2,6 +2,7 @@ var inject = function () {
     odoo.define('odoosoup.web', function (require) {
         var FormRenderer = require('web.FormRenderer');
         var KanbanModel = require('web.KanbanModel');
+        var KanbanRenderer = require('web.KanbanRenderer');
         FormRenderer.include({
             _show_odoosoup: function () {
                 var self = this;
@@ -49,30 +50,50 @@ var inject = function () {
                 }.bind(this));
             },
         });
-        KanbanModel.include({
-            _load: function (dataPoint) {
-                var res = this._super.apply(this, arguments);
-                if (dataPoint.model !== "project.task")  {
-                    return res
+        KanbanRenderer.include({
+            _show_odoosoup: function (target) {
+                var self = this;
+                if (self.state.model !== 'project.task') {
+                    return;
                 }
-                return res.then(function () {
-                    setTimeout(function () {
-                        var opened = JSON.parse(localStorage['odoosoup.task.opened'] || '[]');
-                        $('.o_kanban_record').each(function () {
-                            var id = $(this).data('record').id;
-                            if (opened.includes(id)) {
-                                $('.o_kanban_record_title', this).addClass('fa fa-eye');
-                                var note = localStorage['odoosoup.task.'+id] || '';
-                                if (note) {
-                                    $('.odoosoup_task_note', this).remove();
-                                    $('<div class="odoosoup_task_note text-truncate"/>').attr('title', $('<div />').css('white-space', 'pre-wrap').text(note).prop('outerHTML')).tooltip({'html': true}).text(note.replace(/^\s+|\s+$/g, '').replace(/\s*\n\s*/g, '⏎')).appendTo(this);
-                                }
-                            }
-                        });
-                    });
-                    return res;
+                var opened = JSON.parse(localStorage['odoosoup.task.opened'] || '[]');
+                $('.o_kanban_record', target).each(function () {
+                    if (!$(this).data('record')) {
+                        return;
+                    }
+                    var id = $(this).data('record').id;
+                    if (opened.includes(id)) {
+                        $('.o_kanban_record_title', this).addClass('fa fa-eye');
+                        var note = localStorage['odoosoup.task.'+id] || '';
+                        if (note) {
+                            $('.odoosoup_task_note', this).remove();
+                            $('<div class="odoosoup_task_note text-truncate"/>').attr('title', $('<div />').css('white-space', 'pre-wrap').text(note).prop('outerHTML')).tooltip({'html': true}).text(note.replace(/^\s+|\s+$/g, '').replace(/\s*\n\s*/g, '⏎')).appendTo(this);
+                        }
+                    }
                 });
             },
+            on_attach_callback: function () {
+                var res = this._super.apply(this, arguments);
+                this._show_odoosoup();
+                return res;
+            },
+            updateState: function () {
+                var res = this._super.apply(this, arguments);
+                return res.then(function () {
+                    this._show_odoosoup();
+                    return res;
+                }.bind(this));
+            },
+            updateColumn: function (localID) {
+                var self = this;
+                var res = this._super.apply(this, arguments);
+                return res.then(function () {
+                    var index = _.findIndex(this.widgets, {db_id: localID});
+                    var column = this.widgets[index];
+                    self._show_odoosoup(column.$el);
+                    return res;
+                }.bind(this));
+            }
         });
     });
 };
