@@ -1,3 +1,9 @@
+// ==UserScript== //
+// @name odoosoup
+// @match https://www.odoo.com/web
+// @match https://www.odoo.com/web?*
+// ==/UserScript==
+
 var inject = function () {
     odoo.define('odoosoup.web', function (require) {
         var FormRenderer = require('web.FormRenderer');
@@ -97,3 +103,28 @@ var inject = function () {
 var s = document.createElement('script');
 s.innerText = '('+inject.toString() + ')()';
 document.getElementsByTagName('head')[0].appendChild(s);
+var l = document.createElement('style');
+l.innerText = `
+/* style over existing odoo.com features */
+
+nav.o_main_navbar {
+    background-color: #673A5B;
+}
+
+/* feature added by odoosoup */
+
+.odoosoup_task_note {
+    border: 1px solid #60ba8a;
+    color: #207a4a;
+    background: #f1ffe8;
+}
+textarea.odoosoup_task_note {
+    overflow: hidden;
+    min-height: 23px;
+    resize: none;
+}
+.odoosoup_task_note_tooltip {
+    white-space: pre-wrap;
+}
+`;
+document.getElementsByTagName('head')[0].appendChild(l);

@@ -2,11 +2,10 @@
   "manifest_version": 2,
   "name": "odoosoup",
   "description": "addons for odoo.com support",
-  "version": "1.0.0.4",
+  "version": "1.0.0.5",
   "content_scripts": [
     {
-      "matches": ["*://www.odoo.com/web", "*://www.odoo.com/web?*"],
-      "css": ["odoosoup.css"],
+      "matches": ["https://www.odoo.com/web", "https://www.odoo.com/web?*"],
       "js": ["e.js"]
     }
   ],
