@@ -1,3 +1,11 @@
+/* style over existing odoo.com features */
+
+nav.o_main_navbar {
+    background-color: #673A5B;
+}
+
+/* feature added by odoosoup */
+
 .odoosoup_task_note {
     border: 1px solid #60ba8a;
     color: #207a4a;
