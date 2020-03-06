@@ -19,7 +19,8 @@ var inject = function () {
                 var currentIndex = opened.indexOf(id);
                 if (currentIndex !== -1) {
                     opened.splice(currentIndex, 1);
-                    $('h1 .o_task_name', self.$el).addClass('fa fa-eye');
+                    $('.odoosoup_task_seen', self.$el).remove();
+                    $('h1 .o_task_name', self.$el).before('<i class="fa fa-eye odoosoup_task_seen"/>');
                 } else if (opened.length > 2000) {
                     delete localStorage['odoosoup.task.'+opened.splice(0, 1)[0]];
                 }
@@ -66,7 +67,8 @@ var inject = function () {
                     }
                     var id = $(this).data('record').id;
                     if (opened.includes(id)) {
-                        $('.o_kanban_record_title', this).addClass('fa fa-eye');
+                        $('.odoosoup_task_seen', this).remove();
+                        $('div[name="priority"]:first', this).after('<i class="fa fa-lg fa-eye odoosoup_task_seen"/>');
                         var note = localStorage['odoosoup.task.'+id] || '';
                         if (note) {
                             $('.odoosoup_task_note', this).remove();
@@ -125,6 +127,9 @@ textarea.odoosoup_task_note {
 }
 .odoosoup_task_note_tooltip {
     white-space: pre-wrap;
+}
+.odoosoup_task_seen {
+    color: #673A5B;
 }
 `;
 document.getElementsByTagName('head')[0].appendChild(l);
