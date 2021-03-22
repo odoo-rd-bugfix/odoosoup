@@ -29,7 +29,7 @@ var inject = function () {
           oval.replace(needle, function(match, offset) {
             var link = document.createElement("i");
             link.className = className;
-            link.onclick = () => callback(match, link);
+            link.onclick = (e) => {callback(match, link); e.stopPropagation()};
             node.nodeValue = oval.slice(done_offset, offset+match.length);
             done_offset = offset + match.length;
             insertAfter(link, node);
