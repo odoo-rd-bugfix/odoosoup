@@ -37,6 +37,14 @@ var inject = function () {
             insertAfter(node, link);
           });
         }
+        const copyToClipboard = str => {
+            const el = document.createElement('textarea');
+            el.value = str;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+        };
 
         FormRenderer.include({
             _show_odoosoup: function () {
@@ -92,6 +100,29 @@ var inject = function () {
                         }).open() : link.parentNode.removeChild(link))
                     );
                 }
+                var hash_elt = document.location.hash.substr(1).split("&").reduce((elt, obj)=>{
+                    let [name,value] = obj.split("=");
+                    elt[name] = value;
+                    return elt
+                }, {});
+                if (hash_elt.id){
+                    var form_buttons = document.querySelector('.o_form_buttons_view');
+                    if (!form_buttons) return ;
+                    let button = document.createElement("button");
+                    button.classList.add("btn", "btn-primary");
+                    button.setAttribute("accesskey", "i");
+                    var span = document.createElement("span");
+                    span.textContent = "Copy ID";
+                    button.appendChild(span);
+                    button.addEventListener("click", ()=>{
+                        copyToClipboard(hash_elt.id);
+                        button.children[0].textContent = "ID copied !";
+                        setTimeout(()=>{
+                            button.children[0].textContent = "Copy ID";
+                        }, 1000)
+                    });
+                    form_buttons.appendChild(button);
+                }
             },
             on_attach_callback: function () {
                 var res = this._super.apply(this, arguments);
@@ -127,6 +158,22 @@ var inject = function () {
                             $('<div class="odoosoup_task_note text-truncate"/>').attr('title', $('<div class="odoosoup_task_note_tooltip" />').text(note).prop('outerHTML')).tooltip({'html': true}).text(note.replace(/^\s+|\s+$/g, '').replace(/\s*\n\s*/g, '⏎')).appendTo(this);
                         }
                     }
+                    var dropdown = $(".oe_kanban_bottom_right", this);
+                    var a = document.createElement("a");
+                    a.setAttribute("role", "menuitem");
+                    a.setAttribute("modifiers", "#");
+                    a.setAttribute("href", "#");
+                    a.classList.add("dropdown-item", "oe_kanban_action", "oe_kanban_action_a");
+                    console.log(dropdown);
+                    dropdown.append(a);
+                    a.textContent = "Copy ID";
+                    a.addEventListener("click", ()=>{
+                        copyToClipboard(id);
+                        a.textContent = "ID copied !";
+                        setTimeout(()=>{
+                            a.textContent = "Copy ID";
+                        }, 1000)
+                    });
                 });
             },
             on_attach_callback: function () {
