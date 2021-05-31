@@ -105,11 +105,11 @@ var inject = function () {
                     elt[name] = value;
                     return elt
                 }, {});
-                if (hash_elt.id){
+                if (hash_elt.id && !document.querySelector(".odoosoup_copy_id")){
                     var form_buttons = document.querySelector('.o_form_buttons_view');
                     if (!form_buttons) return ;
                     let button = document.createElement("button");
-                    button.classList.add("btn", "btn-primary");
+                    button.classList.add("btn", "btn-secondary", "odoosoup_copy_id");
                     button.setAttribute("accesskey", "i");
                     var span = document.createElement("span");
                     span.textContent = "Copy ID";
@@ -164,7 +164,6 @@ var inject = function () {
                     a.setAttribute("modifiers", "#");
                     a.setAttribute("href", "#");
                     a.classList.add("dropdown-item", "oe_kanban_action", "oe_kanban_action_a");
-                    console.log(dropdown);
                     dropdown.append(a);
                     a.textContent = "Copy ID";
                     a.addEventListener("click", ()=>{
