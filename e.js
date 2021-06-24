@@ -15,45 +15,18 @@ var inject = function () {
             /**
              * @override
              */
-            async performRpcMessageFetch(domain, limit, moderated_channel_ids, context){
-                const messagesData = await this.env.services.rpc({
-                    model: 'mail.message',
-                    method: 'message_fetch',
-                    kwargs: {
-                        context,
-                        domain,
-                        limit,
-                        moderated_channel_ids,
-                    },
-                }, { shadow: true });
-                const messages = this.env.models['mail.message'].insert(messagesData.map(
-                    messageData => this.env.models['mail.message'].convertData(messageData)
-                ));
-                for (const message of messages) {
-                    for (const thread of message.threads) {
-                        if (thread.model !== 'mail.channel' || thread.channel_type === 'channel') {
-                            continue;
-                        }
-                        this.env.models['mail.message_seen_indicator'].insert({
-                            channelId: thread.id,
-                            messageId: message.id,
-                        });
-                    }
+            convertData(data) {
+                const res = this._super(data);
+                const regexp = /[0-9]{7}/g;
+                if (res.body){
+                    const matches = res.body.match(regexp);
+                    if (!matches) return res;
+                    [...new Set(matches)].forEach(match=>{
+                        res.body = res.body.replace(new RegExp(match, "g"), `<a href="https://www.odoo.com/web#action=3531&cids=1&id=${match}&menu_id=4720&model=project.task&view_type=form" target="_blank">${match}</a>`);
+                    });
                 }
-                messages.forEach(message => {
-                    const regexp = /[0-9]{7}/g;
-                    const matches = message.__values.body.match(regexp);
-                    if (!matches) return;
-                    [...new Set(matches)].forEach(match => {
-                        const reg = new RegExp(match, "g");
-                        const body = message.__values.body.replace(reg, `<a href="https://www.odoo.com/web#action=3531&cids=1&id=${match}&menu_id=4720&model=project.task&view_type=form" target="_blank">${match}</a>`);
-                        message.__values.body = body;
-                        const prettyBody = message.__values.prettyBody.replace(reg, `<a href="https://www.odoo.com/web#action=3531&cids=1&id=${match}&menu_id=4720&model=project.task&view_type=form" target="_blank">${match}</a>`);
-                        message.__values.prettyBody = prettyBody;
-                    })
-                });
-                return messages;
-            }
+                return res;
+            },
         });
         var className = 'fa fa-external-link odoosoup_task_link';
         function insertAfter(new_node, ref_node) {
