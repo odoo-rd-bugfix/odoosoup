@@ -9,7 +9,7 @@ var inject = function () {
         var dialogs = require('web.view_dialogs');
         var FormRenderer = require('web.FormRenderer');
         var KanbanRenderer = require('web.KanbanRenderer');
-        const { patch } = require('web.utils');
+
         const { registerClassPatchModel } = require('mail/static/src/model/model_core.js');
         registerClassPatchModel('mail.message', 'odoosoup.web', {
             /**
