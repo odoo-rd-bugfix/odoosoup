@@ -9,7 +9,52 @@ var inject = function () {
         var dialogs = require('web.view_dialogs');
         var FormRenderer = require('web.FormRenderer');
         var KanbanRenderer = require('web.KanbanRenderer');
-
+        const { patch } = require('web.utils');
+        const { registerClassPatchModel } = require('mail/static/src/model/model_core.js');
+        registerClassPatchModel('mail.message', 'odoosoup.web', {
+            /**
+             * @override
+             */
+            async performRpcMessageFetch(domain, limit, moderated_channel_ids, context){
+                const messagesData = await this.env.services.rpc({
+                    model: 'mail.message',
+                    method: 'message_fetch',
+                    kwargs: {
+                        context,
+                        domain,
+                        limit,
+                        moderated_channel_ids,
+                    },
+                }, { shadow: true });
+                const messages = this.env.models['mail.message'].insert(messagesData.map(
+                    messageData => this.env.models['mail.message'].convertData(messageData)
+                ));
+                for (const message of messages) {
+                    for (const thread of message.threads) {
+                        if (thread.model !== 'mail.channel' || thread.channel_type === 'channel') {
+                            continue;
+                        }
+                        this.env.models['mail.message_seen_indicator'].insert({
+                            channelId: thread.id,
+                            messageId: message.id,
+                        });
+                    }
+                }
+                messages.forEach(message => {
+                    const regexp = /[0-9]{7}/g;
+                    const matches = message.__values.body.match(regexp);
+                    if (!matches) return;
+                    [...new Set(matches)].forEach(match => {
+                        const reg = new RegExp(match, "g");
+                        const body = message.__values.body.replace(reg, `<a href="https://www.odoo.com/web#action=3531&cids=1&id=${match}&menu_id=4720&model=project.task&view_type=form" target="_blank">${match}</a>`);
+                        message.__values.body = body;
+                        const prettyBody = message.__values.prettyBody.replace(reg, `<a href="https://www.odoo.com/web#action=3531&cids=1&id=${match}&menu_id=4720&model=project.task&view_type=form" target="_blank">${match}</a>`);
+                        message.__values.prettyBody = prettyBody;
+                    })
+                });
+                return messages;
+            }
+        });
         var className = 'fa fa-external-link odoosoup_task_link';
         function insertAfter(new_node, ref_node) {
           ref_node.parentNode.insertBefore(new_node, ref_node.nextSibling);
@@ -123,7 +168,6 @@ var inject = function () {
                     });
                     form_buttons.appendChild(button);
                 }
-                this._linkifyTicketNumber();
             },
             on_attach_callback: function () {
                 var res = this._super.apply(this, arguments);
@@ -136,26 +180,6 @@ var inject = function () {
                     this._show_odoosoup();
                     return res;
                 }.bind(this));
-            },
-            isLinkified: false,
-            _linkifyTicketNumber: function (){
-                if (this.isLinkified) return;
-                const self = this;
-                const log_notes = document.querySelectorAll('.o_Message .o_Message_core .o_Message_content .o_Message_prettyBody p');
-                if (!log_notes.length) {
-                    setTimeout(() => self._linkifyTicketNumber(), 200);
-                    return;
-                }
-                log_notes.forEach(log_note => {
-                    const regexp = /[0-9]{6,7}[^&<]/g;
-                    const matches = log_note.innerHTML.match(regexp);
-                    self.isLinkified = true;
-                    if (!matches) return;
-                    [...new Set(matches)].forEach(match => {
-                        const reg = new RegExp(match, "g");
-                        log_note.innerHTML = log_note.innerHTML.replace(reg, `<a href="https://www.odoo.com/web#action=3531&cids=1&id=${match}&menu_id=4720&model=project.task&view_type=form" target="_blank">${match}</a>`);
-                    })
-                })
             },
         });
         KanbanRenderer.include({
