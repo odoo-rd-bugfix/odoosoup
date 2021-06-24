@@ -123,6 +123,7 @@ var inject = function () {
                     });
                     form_buttons.appendChild(button);
                 }
+                this._linkifyTicketNumber();
             },
             on_attach_callback: function () {
                 var res = this._super.apply(this, arguments);
@@ -135,6 +136,26 @@ var inject = function () {
                     this._show_odoosoup();
                     return res;
                 }.bind(this));
+            },
+            isLinkified: false,
+            _linkifyTicketNumber: function (){
+                if (this.isLinkified) return;
+                const self = this;
+                const log_notes = document.querySelectorAll('.o_Message .o_Message_core .o_Message_content .o_Message_prettyBody p');
+                if (!log_notes.length) {
+                    setTimeout(() => self._linkifyTicketNumber(), 200);
+                    return;
+                }
+                log_notes.forEach(log_note => {
+                    const regexp = /[0-9]{6,7}[^&<]/g;
+                    const matches = log_note.innerHTML.match(regexp);
+                    self.isLinkified = true;
+                    if (!matches) return;
+                    [...new Set(matches)].forEach(match => {
+                        const reg = new RegExp(match, "g");
+                        log_note.innerHTML = log_note.innerHTML.replace(reg, `<a href="https://www.odoo.com/web#action=3531&cids=1&id=${match}&menu_id=4720&model=project.task&view_type=form" target="_blank">${match}</a>`);
+                    })
+                })
             },
         });
         KanbanRenderer.include({
