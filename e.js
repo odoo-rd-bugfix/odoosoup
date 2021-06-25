@@ -17,12 +17,16 @@ var inject = function () {
              */
             convertData(data) {
                 const res = this._super(data);
-                const regexp = /[0-9]{7}/g;
-                if (res.body){
+                const regexp = /[^"][0-9]{7}[^"]/g;
+                if ((res.is_note || (res.is_discussion && res.message_type == "email")) && res.body){
                     const matches = res.body.match(regexp);
                     if (!matches) return res;
                     [...new Set(matches)].forEach(match=>{
-                        res.body = res.body.replace(new RegExp(match, "g"), `<a href="https://www.odoo.com/web#action=3531&cids=1&id=${match}&menu_id=4720&model=project.task&view_type=form" target="_blank">${match}</a>`);
+                        let number_match = match.match(/[0-9]/g);
+                        if (!number_match) return;
+                        let number = +number_match.join('');
+                        if (number.toString().length != 7) return;
+                        res.body = res.body.replace(new RegExp(number, "g"), `<a href="https://www.odoo.com/web#action=3531&cids=1&id=${number}&menu_id=4720&model=project.task&view_type=form" target="_blank">${number}</a>`);
                     });
                 }
                 return res;
