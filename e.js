@@ -10,7 +10,7 @@ var inject = function () {
         var FormRenderer = require('web.FormRenderer');
         var KanbanRenderer = require('web.KanbanRenderer');
 
-        const { registerClassPatchModel } = require('mail/static/src/model/model_core.js');
+        const { registerClassPatchModel } = require('@mail/model/model_core');
         registerClassPatchModel('mail.message', 'odoosoup.web', {
             /**
              * @override
