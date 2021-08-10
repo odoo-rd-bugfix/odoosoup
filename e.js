@@ -17,7 +17,7 @@ var inject = function () {
              */
             convertData(data) {
                 const res = this._super(data);
-                const regexp = /[^"/][0-9]{7}[^-"&]/g;
+                const regexp = /[^"/a-z][0-9]{7}[^-"&]/g;
                 if ((res.is_note || (res.is_discussion && res.message_type == "email")) && res.body){
                     const matches = res.body.match(regexp);
                     if (!matches) return res;
