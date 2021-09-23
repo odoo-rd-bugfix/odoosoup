@@ -122,12 +122,7 @@ var inject = function () {
                         }).open() : link.parentNode.removeChild(link))
                     );
                 }
-                var hash_elt = document.location.hash.substr(1).split("&").reduce((elt, obj)=>{
-                    let [name,value] = obj.split("=");
-                    elt[name] = value;
-                    return elt
-                }, {});
-                if (hash_elt.id && !document.querySelector(".odoosoup_copy_id")){
+                if (!document.querySelector(".odoosoup_copy_id")){
                     var form_buttons = document.querySelector('.o_form_buttons_view');
                     if (!form_buttons) return ;
                     let button = document.createElement("button");
@@ -137,6 +132,11 @@ var inject = function () {
                     span.textContent = "Copy ID";
                     button.appendChild(span);
                     button.addEventListener("click", ()=>{
+                        const hash_elt = document.location.hash.substr(1).split("&").reduce((elt, obj)=>{
+                            let [name,value] = obj.split("=");
+                            elt[name] = value;
+                            return elt
+                        }, {});
                         copyToClipboard(hash_elt.id);
                         button.children[0].textContent = "ID copied !";
                         setTimeout(()=>{
