@@ -158,6 +158,7 @@ var inject = function () {
                     return res;
                 }.bind(this));
             },
+            quickEditExclusion: ['*'],
         });
         KanbanRenderer.include({
             _show_odoosoup: function (target) {
@@ -220,16 +221,6 @@ var inject = function () {
                 }.bind(this));
             }
         });
-        //Userscript by XMO to disable click-to-edit
-        document.addEventListener('click', (e) => {
-            // rough prefilter: only care about clicks targeting non-interactive
-            // elements in readonly forms
-            if (!e.target.matches('.o_form_readonly :not(a, a *, button, button *, input)')) {
-                return;
-            }
-            e.stopPropagation();
-            return false;
-        }, { capture: true });
     });
 };
 var s = document.createElement('script');
