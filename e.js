@@ -11,7 +11,7 @@ var inject = function () {
         var KanbanRenderer = require('web.KanbanRenderer');
 
         const { patchModelMethods } = require('@mail/model/model_core');
-        patchModelMethods('mail.message', {
+        patchModelMethods('Message', {
             /**
              * @override
              */
