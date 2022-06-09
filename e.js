@@ -181,13 +181,21 @@ var inject = function () {
                             $('<div class="odoosoup_task_note text-truncate"/>').attr('title', $('<div class="odoosoup_task_note_tooltip" />').text(note).prop('outerHTML')).tooltip({'html': true}).text(note.replace(/^\s+|\s+$/g, '').replace(/\s*\n\s*/g, '⏎')).appendTo(this);
                         }
                     }
-                    var dropdown = $(".oe_kanban_bottom_right", this);
+                    /* add Open task in another tab */
+                    const tags = $(".oe_kanban_content", this);
+                    const div = document.createElement('div');
+                    div.innerHTML = `<a class="odoosoup_child_same_line oe_kanban_action_a dropdown-item odoosoup_awesome_color"  
+                                        href="https://www.odoo.com/web#id=${id}&cids=1&menu_id=4720&action=333&active_id=49&model=project.task&view_type=form" 
+                                        target="_blank">
+                                        Open Task
+                                     </a>`;
+                    tags.append(div);
+                    /* add Copy ID */
                     var a = document.createElement("a");
                     a.setAttribute("role", "menuitem");
                     a.setAttribute("modifiers", "#");
                     a.setAttribute("href", "#");
-                    a.classList.add("dropdown-item", "oe_kanban_action", "oe_kanban_action_a");
-                    dropdown.append(a);
+                    a.classList.add("dropdown-item", "oe_kanban_action", "oe_kanban_action_a", "odoosoup_child_same_line");
                     a.textContent = "Copy ID";
                     a.addEventListener("click", ()=>{
                         copyToClipboard(id);
@@ -196,6 +204,7 @@ var inject = function () {
                             a.textContent = "Copy ID";
                         }, 1000)
                     });
+                    div.appendChild(a);
                 });
             },
             on_attach_callback: function () {
@@ -255,6 +264,14 @@ textarea.odoosoup_task_note {
 .odoosoup_task_link {
     margin-left: 2px;
     cursor: pointer;
+}
+.odoosoup_child_same_line {
+    display: inline-block; 
+    width: 50%;
+    height: 100%;
+}
+.odoosoup_awesome_color{
+    color: rgb(68,142,146);
 }
 `;
 document.getElementsByTagName('head')[0].appendChild(l);
