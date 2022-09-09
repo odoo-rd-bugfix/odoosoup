@@ -107,15 +107,16 @@ var inject = function () {
                 if (desc) {
                     add_link(desc, /\bM[0-9]{7,}\b/g, (match, link) =>
                         this._rpc({
-                            model: 'sale.subscription', method: 'search', kwargs: {args: [['code', '=', match]], limit: 1}
+                            model: 'sale.order', method: 'search', kwargs: {domain: [['is_subscription', '=', true], ['client_order_ref', '=', match]], limit: 1}
                         }).then(result => result.length ? new dialogs.FormViewDialog(this, {
-                            res_model: "sale.subscription",
+                            res_model: "sale.order",
                             res_id: result[0],
+                            view_id: 16559,
                         }).open() : link.parentNode.removeChild(link))
                     );
                     add_link(desc, /\b[a-z][a-z0-9-]{2,}[a-z0-9]\.odoo\.com\b/gi, (match, link) =>
                         this._rpc({
-                            model: 'openerp.enterprise.database', method: 'search', kwargs: {args: [['url', 'ilike', '%//'+match] ], limit: 1}
+                            model: 'openerp.enterprise.database', method: 'search', kwargs: {domain: [['url', 'ilike', '%//'+match] ], limit: 1}
                         }).then(result => result.length ? new dialogs.FormViewDialog(this, {
                             res_model: "openerp.enterprise.database",
                             res_id: result[0],
