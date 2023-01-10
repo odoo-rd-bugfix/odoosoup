@@ -149,6 +149,13 @@ function addTaskNotes({ KanbanRecord, FormRenderer, debounce, onMounted, onPatch
             this.textArea.style.border = "1px solid #60ba8a";
             this.textArea.addEventListener("input", debounce(this.onInput.bind(this), 125));
             target.parentNode.insertBefore(this.textArea, target.nextSibling);
+            this.textArea.style.height = `${this.textArea.scrollHeight}px`;
+            this.textArea.addEventListener("input", OnInput, false);
+
+            function OnInput() {
+                this.style.height = '50px';
+                this.style.height = `${Math.max(this.scrollHeight, 50)}px`;
+            }
         },
     });
     patch(KanbanRecord.prototype, "odoosoup.task-notes", {
