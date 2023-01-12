@@ -147,6 +147,53 @@ function addCopyIdToTasks({
         },
     });
 }
+
+function openTaskInNewTab({ KanbanRecord, patch, onMounted, onPatched }) {
+    patch(KanbanRecord.prototype, "odoosoup.open-new-tab", {
+        setup() {
+            this._super();
+            if (this.props.record.resModel !== "project.task") {
+                return;
+            }
+            onMounted(() => this.renderOpenButton());
+            onPatched(() => this.renderOpenButton());
+        },
+
+        renderOpenButton() {
+            const card = this.rootRef.el;
+            card.querySelector(".odoosoup-open-btn")?.remove();
+            const params = new Map(
+                window.location.hash
+                    .slice(1)
+                    .split("&")
+                    .map((e) => e.split("="))
+            );
+            params.set("model", "project.task");
+            params.set("view_type", "form");
+            params.set("id", this.props.record.resId);
+            let url = `${window.location.origin}/web#`;
+            let first = true;
+            for (key of [
+                "cids",
+                "menu_id",
+                "action",
+                "active_id",
+                "model",
+                "view_type",
+                "id",
+            ]) {
+                if (!first) {
+                    url += "&";
+                } else {
+                    first = false;
+                }
+                url += `${key}=${params.get(key)}`;
+            }
+            const link = document.createElement("div");
+            link.innerHTML = `<a target="_blank" class="odoosoup-open-btn" href="${url}">Open task</a>`;
+            card.querySelector(".oe_kanban_content").appendChild(link);
+        },
+    });
 }
 
 function addTaskNotes({ KanbanRecord, FormRenderer, debounce, onMounted, onPatched, patch }) {
@@ -230,6 +277,7 @@ const odoosoupPatches = {
     addCopyIdToTasks,
     trackOpenedTickets,
     addTaskNotes,
+    openTaskInNewTab,
 };
 
 const odoosoup = function () {
