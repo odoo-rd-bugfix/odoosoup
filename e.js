@@ -169,7 +169,7 @@ function addTaskNotes({ KanbanRecord, FormRenderer, debounce, onMounted, onPatch
             if (text) {
                 localStorage[this.storageKey()] = text;
             } else {
-                localStorage.removeItem(this.storageKey);
+                localStorage.removeItem(this.storageKey());
             }
         },
 
