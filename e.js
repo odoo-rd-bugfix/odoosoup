@@ -211,13 +211,18 @@ function addTaskNotes({ KanbanRecord, FormRenderer, debounce, onMounted, onPatch
             return `odoosoup.task.${this.props.record.data.id}`;
         },
 
-        onInput() {
+        onSave() {
             const text = this.textArea.value.trim();
             if (text) {
                 localStorage[this.storageKey()] = text;
             } else {
                 localStorage.removeItem(this.storageKey());
             }
+        },
+
+        onInput() {
+            this.style.height = "0";
+            this.style.height = `${Math.max(this.scrollHeight, 50)}px`;
         },
 
         renderTextArea() {
@@ -231,10 +236,15 @@ function addTaskNotes({ KanbanRecord, FormRenderer, debounce, onMounted, onPatch
                 "border-success",
                 "border",
                 "bg-success-light",
-                "text-900"
+                "text-900",
+                "overflow-hidden",
             );
-            this.textArea.addEventListener("input", debounce(this.onInput.bind(this), 125));
+            this.textArea.style.resize = "none";
+            this.textArea.addEventListener("input", debounce(this.onSave.bind(this), 125));
+            this.textArea.addEventListener("blur", this.onSave.bind(this));
+            this.textArea.addEventListener("input", this.onInput);
             target.parentNode.insertBefore(this.textArea, target.nextSibling);
+            this.textArea.style.height = `${Math.max(this.textArea.scrollHeight, 50)}px`;
         },
     });
     patch(KanbanRecord.prototype, "odoosoup.task-notes", {
