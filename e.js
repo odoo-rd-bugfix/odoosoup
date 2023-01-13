@@ -57,9 +57,10 @@ function trackOpenedTickets({
                 card.querySelectorAll(".odoosoup-eye").forEach((e) => e.remove());
                 const target = card.querySelector('div[name="priority"]');
                 const parent = document.createElement("div");
+                parent.classList.add("odoosoup-eye");
                 const eye = document.createElement("i");
                 parent.appendChild(eye);
-                eye.classList.add("fa", "fa-lg", "fa-eye", "odoosoup-eye");
+                eye.classList.add("fa", "fa-lg", "fa-eye");
                 target.parentNode.insertBefore(parent, target.nextSibling);
             }
         },
@@ -142,6 +143,7 @@ function addCopyIdToTasks({
             copyIcon.classList.add("fa", "fa-clipboard");
             bindCopyId(copyIcon, id, [], ["text-success"]);
             const wrapper = document.createElement("div");
+            wrapper.classList.add("odoosoup-copy-btn");
             wrapper.appendChild(copyIcon);
             target.parentNode.insertBefore(wrapper, target.nextSibling);
         },
