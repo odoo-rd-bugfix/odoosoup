@@ -7,6 +7,7 @@
 function trackOpenedTickets({
     FormRenderer,
     KanbanRecord,
+    ListRenderer,
     onMounted,
     onPatched,
     patch,
@@ -63,6 +64,32 @@ function trackOpenedTickets({
                 eye.classList.add("fa", "fa-lg", "fa-eye");
                 target.parentNode.insertBefore(parent, target.nextSibling);
             }
+        },
+    });
+
+    patch(ListRenderer.prototype, "odoosoup.track-opened-tickets", {
+        setup() {
+            this._super();
+            if (this.props.list.resModel !== "project.task") {
+                return;
+            }
+            onMounted(() => this.renderSeenIcon());
+            onPatched(() => this.renderSeenIcon());
+        },
+
+        renderSeenIcon() {
+            this.props.list.records.forEach((record) => {
+                if (openedTickets.includes(record.resId)) {
+                    const target = document.querySelector(`tr[data-id="${record.id}"] td[name="priority"]`);
+                    target.querySelectorAll(".odoosoup-eye").forEach((e) => e.remove());
+                    const parent = document.createElement("div");
+                    parent.classList.add("odoosoup-eye");
+                    const eye = document.createElement("i");
+                    parent.appendChild(eye);
+                    eye.classList.add("fa", "fa-lg", "fa-eye");
+                    target.appendChild(parent);
+                }
+            });
         },
     });
 }
@@ -198,7 +225,7 @@ function openTaskInNewTab({ KanbanRecord, patch, onMounted, onPatched }) {
     });
 }
 
-function addTaskNotes({ KanbanRecord, FormRenderer, debounce, onMounted, onPatched, patch }) {
+function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, onMounted, onPatched, patch }) {
     patch(FormRenderer.prototype, "odoosoup.task-notes", {
         setup() {
             this._super();
@@ -283,6 +310,39 @@ function addTaskNotes({ KanbanRecord, FormRenderer, debounce, onMounted, onPatch
             card.appendChild(div);
         },
     });
+
+    patch(ListRenderer.prototype, "odoosoup.task-notes", {
+        setup() {
+            this._super();
+            if (this.props.list.resModel !== "project.task") {
+                return;
+            }
+            onMounted(() => this.renderNotes());
+            onPatched(() => this.renderNotes());
+        },
+
+        renderNotes() {
+            this.props.list.records.forEach((record) => {
+                const id = record.resId;
+                const note = localStorage[`odoosoup.task.${id}`];
+                if (!note) {
+                    return;
+                }
+                const $div = document.createElement("div");
+                $div.classList.add(
+                    "odoosoup-note",
+                    "text-truncate",
+                    "border-success",
+                    "border",
+                    "bg-success-light",
+                    "text-900"
+                );
+                $div.textContent = note.replace(/^\s+|\s+$/g, "").replace(/\s*\n\s*/g, "⏎");
+                const $row = document.querySelector(`tr[data-id="${record.id}"]`);
+                $row.querySelector('td[name="name"]').appendChild($div);
+            });
+        },
+    });
 }
 
 const odoosoupPatches = {
@@ -300,12 +360,14 @@ const odoosoup = function () {
         const { FormRenderer } = require("@web/views/form/form_renderer");
         const { FormControlPanel } = require("@web/views/form/control_panel/form_control_panel");
         const { KanbanRecord } = require("@web/views/kanban/kanban_record");
+        const { ListRenderer } = require("@web/views/list/list_renderer");
         const { onRendered, onMounted, onPatched, useEffect } = require("@odoo/owl");
 
         const dependencies = {
             FormControlPanel,
             FormRenderer,
             KanbanRecord,
+            ListRenderer,
             debounce,
             onMounted,
             onPatched,
