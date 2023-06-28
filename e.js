@@ -339,6 +339,7 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, onMo
                 );
                 $div.textContent = note.replace(/^\s+|\s+$/g, "").replace(/\s*\n\s*/g, "⏎");
                 const $row = document.querySelector(`tr[data-id="${record.id}"]`);
+                $row.querySelector(".odoosoup-note")?.remove();
                 $row.querySelector('td[name="name"]').appendChild($div);
             });
         },
