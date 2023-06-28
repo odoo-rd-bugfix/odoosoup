@@ -8,8 +8,6 @@ function trackOpenedTickets({
     FormRenderer,
     KanbanRecord,
     ListRenderer,
-    onMounted,
-    onPatched,
     patch,
     useEffect,
 }) {
@@ -48,8 +46,7 @@ function trackOpenedTickets({
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
-            onMounted(() => this.renderSeenIcon());
-            onPatched(() => this.renderSeenIcon());
+            useEffect(() => this.renderSeenIcon());
         },
 
         renderSeenIcon() {
@@ -73,8 +70,7 @@ function trackOpenedTickets({
             if (this.props.list.resModel !== "project.task") {
                 return;
             }
-            onMounted(() => this.renderSeenIcon());
-            onPatched(() => this.renderSeenIcon());
+            useEffect(() => this.renderSeenIcon());
         },
 
         renderSeenIcon() {
@@ -96,10 +92,8 @@ function trackOpenedTickets({
 
 function addCopyIdToTasks({
     KanbanRecord,
-    FormControlPanel,
+    ControlPanel,
     FormRenderer,
-    onMounted,
-    onPatched,
     patch,
     useEffect,
 }) {
@@ -119,10 +113,11 @@ function addCopyIdToTasks({
     }
 
     let recordId = null;
-    patch(FormControlPanel.prototype, "odoosoup.copy-id", {
+    patch(ControlPanel.prototype, "odoosoup.copy-id", {
         renderCopyIdButton() {
-            const target = document.querySelector(".o_cp_bottom_right");
+            const target = document.querySelector(".o_control_panel_navigation");
             target.querySelectorAll(".odoosoup-copy-btn").forEach((e) => e.remove());
+            if (this.env.config.viewType !== "form") return;
             const button = document.createElement("button");
             button.classList.add("btn", "btn-outline-primary", "odoosoup-copy-btn");
             button.textContent = "Copy ID";
@@ -132,8 +127,10 @@ function addCopyIdToTasks({
 
         setup() {
             this._super();
-            onMounted(() => this.renderCopyIdButton());
-            onPatched(() => this.renderCopyIdButton());
+            if (this.env.searchModel.resModel !== "project.task") {
+                return;
+            }
+            useEffect(() => this.renderCopyIdButton());
         },
     });
     patch(FormRenderer.prototype, "odoosoup.copy-id", {
@@ -157,8 +154,7 @@ function addCopyIdToTasks({
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
-            onMounted(() => this.renderCopyIdButton());
-            onPatched(() => this.renderCopyIdButton());
+            useEffect(() => this.renderCopyIdButton());
         },
 
         renderCopyIdButton() {
@@ -177,15 +173,14 @@ function addCopyIdToTasks({
     });
 }
 
-function openTaskInNewTab({ KanbanRecord, patch, onMounted, onPatched }) {
+function openTaskInNewTab({ KanbanRecord, patch, useEffect }) {
     patch(KanbanRecord.prototype, "odoosoup.open-new-tab", {
         setup() {
             this._super();
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
-            onMounted(() => this.renderOpenButton());
-            onPatched(() => this.renderOpenButton());
+            useEffect(() => this.renderOpenButton());
         },
 
         renderOpenButton() {
@@ -225,15 +220,14 @@ function openTaskInNewTab({ KanbanRecord, patch, onMounted, onPatched }) {
     });
 }
 
-function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, onMounted, onPatched, patch }) {
+function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, patch, useEffect }) {
     patch(FormRenderer.prototype, "odoosoup.task-notes", {
         setup() {
             this._super();
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
-            onMounted(() => this.renderTextArea());
-            onPatched(() => this.renderTextArea());
+            useEffect(() => this.renderTextArea());
         },
 
         storageKey() {
@@ -282,8 +276,7 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, onMo
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
-            onMounted(() => this.renderNote());
-            onPatched(() => this.renderNote());
+            useEffect(() => this.renderNote());
         },
 
         renderNote() {
@@ -317,8 +310,7 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, onMo
             if (this.props.list.resModel !== "project.task") {
                 return;
             }
-            onMounted(() => this.renderNotes());
-            onPatched(() => this.renderNotes());
+            useEffect(() => this.renderNotes());
         },
 
         renderNotes() {
@@ -355,23 +347,29 @@ const odoosoupPatches = {
 
 const odoosoup = function () {
 
-    odoo.define("odoosoup", (require) => {
+    odoo.define("odoosoup", [
+        "@web/core/utils/patch",
+        "@web/core/utils/timing",
+        "@web/views/form/form_renderer",
+        "@web/search/control_panel/control_panel",
+        "@web/views/kanban/kanban_record",
+        "@web/views/list/list_renderer",
+        "@odoo/owl",
+    ], (require) => {
         const { patch } = require("@web/core/utils/patch");
         const { debounce } = require("@web/core/utils/timing");
         const { FormRenderer } = require("@web/views/form/form_renderer");
-        const { FormControlPanel } = require("@web/views/form/control_panel/form_control_panel");
+        const { ControlPanel } = require("@web/search/control_panel/control_panel");
         const { KanbanRecord } = require("@web/views/kanban/kanban_record");
         const { ListRenderer } = require("@web/views/list/list_renderer");
-        const { onRendered, onMounted, onPatched, useEffect } = require("@odoo/owl");
+        const { onRendered, useEffect } = require("@odoo/owl");
 
         const dependencies = {
-            FormControlPanel,
+            ControlPanel,
             FormRenderer,
             KanbanRecord,
             ListRenderer,
             debounce,
-            onMounted,
-            onPatched,
             onRendered,
             patch,
             useEffect,
