@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "odoosoup",
   "description": "addons for odoo.com support",
-  "version": "16.3.0",
+  "version": "16.3.1",
   "content_scripts": [
     {
       "matches": ["https://www.odoo.com/web", "https://www.odoo.com/web?*"],

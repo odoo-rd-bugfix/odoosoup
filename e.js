@@ -53,13 +53,13 @@ function trackOpenedTickets({
             if (openedTickets.includes(this.props.record.resId)) {
                 const card = this.rootRef.el;
                 card.querySelectorAll(".odoosoup-eye").forEach((e) => e.remove());
-                const target = card.querySelector('div[name="priority"]');
                 const parent = document.createElement("div");
                 parent.classList.add("odoosoup-eye");
                 const eye = document.createElement("i");
                 parent.appendChild(eye);
                 eye.classList.add("fa", "fa-lg", "fa-eye");
-                target.parentNode.insertBefore(parent, target.nextSibling);
+                const target = card.querySelector('.oe_kanban_bottom_left');
+                target.insertBefore(parent, target.firstChild);
             }
         },
     });
@@ -76,7 +76,7 @@ function trackOpenedTickets({
         renderSeenIcon() {
             this.props.list.records.forEach((record) => {
                 if (openedTickets.includes(record.resId)) {
-                    const target = document.querySelector(`tr[data-id="${record.id}"] td[name="priority"]`);
+                    const target = this.rootRef.el.querySelector(`tr[data-id="${record.id}"] td[name="priority"]`);
                     target.querySelectorAll(".odoosoup-eye").forEach((e) => e.remove());
                     const parent = document.createElement("div");
                     parent.classList.add("odoosoup-eye");
@@ -115,9 +115,10 @@ function addCopyIdToTasks({
     let recordId = null;
     patch(ControlPanel.prototype, "odoosoup.copy-id", {
         renderCopyIdButton() {
-            const target = document.querySelector(".o_control_panel_navigation");
+            if (!this.root.el) return;
+            const target = this.root.el.querySelector(".o_control_panel_navigation");
+            if (this.env.config.viewType !== "form" || !target) return;
             target.querySelectorAll(".odoosoup-copy-btn").forEach((e) => e.remove());
-            if (this.env.config.viewType !== "form") return;
             const button = document.createElement("button");
             button.classList.add("btn", "btn-outline-primary", "odoosoup-copy-btn");
             button.textContent = "Copy ID";
@@ -127,7 +128,7 @@ function addCopyIdToTasks({
 
         setup() {
             this._super();
-            if (this.env.searchModel.resModel !== "project.task") {
+            if (this.env?.searchModel?.resModel !== "project.task") {
                 return;
             }
             useEffect(() => this.renderCopyIdButton());
@@ -160,7 +161,6 @@ function addCopyIdToTasks({
         renderCopyIdButton() {
             const id = this.props.record.resId;
             const card = this.rootRef.el;
-            const target = card.querySelector('div[name="priority"]');
             card.querySelector(".odoosoup-copy-btn")?.remove();
             const copyIcon = document.createElement("i");
             copyIcon.classList.add("fa", "fa-clipboard");
@@ -168,7 +168,8 @@ function addCopyIdToTasks({
             const wrapper = document.createElement("div");
             wrapper.classList.add("odoosoup-copy-btn");
             wrapper.appendChild(copyIcon);
-            target.parentNode.insertBefore(wrapper, target.nextSibling);
+            const target = card.querySelector('.oe_kanban_bottom_left');
+            target.insertBefore(wrapper, target.firstChild);
         },
     });
 }
@@ -227,6 +228,7 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, patc
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
+            this.odooSoupViewRoot = owl.useRef("compiled_view_root");
             useEffect(() => this.renderTextArea());
         },
 
@@ -250,8 +252,7 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, patc
 
         renderTextArea() {
             const note = localStorage[this.storageKey()] || "";
-            const target = document.querySelector(".oe_title");
-            document.querySelectorAll(".odoosoup-notes").forEach((e) => e.remove());
+            this.odooSoupViewRoot.el.querySelectorAll(".odoosoup-notes").forEach((e) => e.remove());
             this.textArea = document.createElement("textarea");
             this.textArea.value = note;
             this.textArea.classList.add(
@@ -266,7 +267,13 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, patc
             this.textArea.addEventListener("input", debounce(this.onSave.bind(this), 125));
             this.textArea.addEventListener("blur", this.onSave.bind(this));
             this.textArea.addEventListener("input", this.onInput);
-            target.parentNode.insertBefore(this.textArea, target.nextSibling);
+            let target = this.odooSoupViewRoot.el.querySelector(".oe_title");
+            if (target) {
+                target.parentNode.insertBefore(this.textArea, target.nextSibling);
+            } else {
+                target = this.odooSoupViewRoot.el.querySelector(".o_form_sheet");
+                target.insertBefore(this.textArea, target.firstChild);
+            }
             this.textArea.style.height = `${Math.max(this.textArea.scrollHeight, 50)}px`;
         },
     });
@@ -282,7 +289,7 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, patc
         renderNote() {
             const id = this.props.record.resId;
             const dataPointId = this.props.record.id;
-            const card = document.querySelector(
+            const card = this.rootRef.el.querySelector(
                 `div[data-id="${dataPointId}"] .oe_kanban_card`
             );
             card.querySelector(".odoosoup-note")?.remove();
@@ -330,7 +337,7 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, patc
                     "text-900"
                 );
                 $div.textContent = note.replace(/^\s+|\s+$/g, "").replace(/\s*\n\s*/g, "⏎");
-                const $row = document.querySelector(`tr[data-id="${record.id}"]`);
+                const $row = this.rootRef.el.querySelector(`tr[data-id="${record.id}"]`);
                 $row.querySelector(".odoosoup-note")?.remove();
                 $row.querySelector('td[name="name"]').appendChild($div);
             });
