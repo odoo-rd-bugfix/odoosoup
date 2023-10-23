@@ -4,6 +4,8 @@
 // @match https://www.odoo.com/web?*
 // ==/UserScript==
 
+(function () {
+
 function trackOpenedTickets({
     FormRenderer,
     KanbanRecord,
@@ -345,59 +347,42 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, patc
     });
 }
 
-const odoosoupPatches = {
+const odoosoupPatches = [
     addCopyIdToTasks,
     trackOpenedTickets,
     addTaskNotes,
     openTaskInNewTab,
-};
+];
 
-const odoosoup = function () {
+odoo.define("odoosoup", [
+    "@web/core/utils/patch",
+    "@web/core/utils/timing",
+    "@web/views/form/form_renderer",
+    "@web/search/control_panel/control_panel",
+    "@web/views/kanban/kanban_record",
+    "@web/views/list/list_renderer",
+    "@odoo/owl",
+], (require) => {
+    const { patch } = require("@web/core/utils/patch");
+    const { debounce } = require("@web/core/utils/timing");
+    const { FormRenderer } = require("@web/views/form/form_renderer");
+    const { ControlPanel } = require("@web/search/control_panel/control_panel");
+    const { KanbanRecord } = require("@web/views/kanban/kanban_record");
+    const { ListRenderer } = require("@web/views/list/list_renderer");
+    const { onRendered, useEffect } = require("@odoo/owl");
 
-    odoo.define("odoosoup", [
-        "@web/core/utils/patch",
-        "@web/core/utils/timing",
-        "@web/views/form/form_renderer",
-        "@web/search/control_panel/control_panel",
-        "@web/views/kanban/kanban_record",
-        "@web/views/list/list_renderer",
-        "@odoo/owl",
-    ], (require) => {
-        const { patch } = require("@web/core/utils/patch");
-        const { debounce } = require("@web/core/utils/timing");
-        const { FormRenderer } = require("@web/views/form/form_renderer");
-        const { ControlPanel } = require("@web/search/control_panel/control_panel");
-        const { KanbanRecord } = require("@web/views/kanban/kanban_record");
-        const { ListRenderer } = require("@web/views/list/list_renderer");
-        const { onRendered, useEffect } = require("@odoo/owl");
+    const dependencies = {
+        ControlPanel,
+        FormRenderer,
+        KanbanRecord,
+        ListRenderer,
+        debounce,
+        onRendered,
+        patch,
+        useEffect,
+    };
 
-        const dependencies = {
-            ControlPanel,
-            FormRenderer,
-            KanbanRecord,
-            ListRenderer,
-            debounce,
-            onRendered,
-            patch,
-            useEffect,
-        };
+    odoosoupPatches.forEach((patchFn) => patchFn(dependencies));
+});
 
-        odoosoupPatches.forEach((patchFn) => patchFn(dependencies));
-    });
-
-};
-
-const script = document.createElement("script");
-let scriptContent = "";
-
-for (let patch of Object.values(odoosoupPatches)) {
-    scriptContent += patch.toString();
-    scriptContent += "\n";
-}
-
-scriptContent += "const odoosoupPatches = ["
-scriptContent += Object.keys(odoosoupPatches).join(", ");
-scriptContent += "];\n";
-scriptContent += "(" + odoosoup.toString() + ")()";
-script.innerText = scriptContent;
-document.querySelector("head").appendChild(script);
+})()
