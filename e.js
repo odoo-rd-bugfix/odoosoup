@@ -24,9 +24,9 @@ function trackOpenedTickets({
         openedTickets = JSON.parse(event.newValue || "[]");
     };
 
-    patch(FormRenderer.prototype, "odoosoup.track-opened-tickets", {
+    patch(FormRenderer.prototype, {
         setup() {
-            this._super();
+            super.setup();
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
@@ -37,14 +37,14 @@ function trackOpenedTickets({
                         localStorage[localStorageKey] = JSON.stringify(openedTickets);
                     }
                 },
-                () => [this.props.record.data.id]
+                () => [this.props.record.resId]
             );
         },
     });
 
-    patch(KanbanRecord.prototype, "odoosoup.track-opened-tickets", {
+    patch(KanbanRecord.prototype, {
         setup() {
-            this._super();
+            super.setup();
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
@@ -66,9 +66,9 @@ function trackOpenedTickets({
         },
     });
 
-    patch(ListRenderer.prototype, "odoosoup.track-opened-tickets", {
+    patch(ListRenderer.prototype, {
         setup() {
-            this._super();
+            super.setup();
             if (this.props.list.resModel !== "project.task") {
                 return;
             }
@@ -115,7 +115,7 @@ function addCopyIdToTasks({
     }
 
     let recordId = null;
-    patch(ControlPanel.prototype, "odoosoup.copy-id", {
+    patch(ControlPanel.prototype, {
         renderCopyIdButton() {
             if (!this.root.el) return;
             const target = this.root.el.querySelector(".o_control_panel_navigation");
@@ -129,16 +129,16 @@ function addCopyIdToTasks({
         },
 
         setup() {
-            this._super();
+            super.setup();
             if (this.env?.searchModel?.resModel !== "project.task") {
                 return;
             }
             useEffect(() => this.renderCopyIdButton());
         },
     });
-    patch(FormRenderer.prototype, "odoosoup.copy-id", {
+    patch(FormRenderer.prototype, {
         setup() {
-            this._super();
+            super.setup();
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
@@ -147,13 +147,13 @@ function addCopyIdToTasks({
                 (id) => {
                     recordId = id;
                 },
-                () => [this.props.record.data.id]
+                () => [this.props.record.resId]
             );
         },
     });
-    patch(KanbanRecord.prototype, "odoosoup.copy-id", {
+    patch(KanbanRecord.prototype, {
         setup() {
-            this._super();
+            super.setup();
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
@@ -177,9 +177,9 @@ function addCopyIdToTasks({
 }
 
 function openTaskInNewTab({ KanbanRecord, patch, useEffect }) {
-    patch(KanbanRecord.prototype, "odoosoup.open-new-tab", {
+    patch(KanbanRecord.prototype, {
         setup() {
-            this._super();
+            super.setup();
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
@@ -224,9 +224,9 @@ function openTaskInNewTab({ KanbanRecord, patch, useEffect }) {
 }
 
 function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, patch, useEffect }) {
-    patch(FormRenderer.prototype, "odoosoup.task-notes", {
+    patch(FormRenderer.prototype, {
         setup() {
-            this._super();
+            super.setup();
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
@@ -235,7 +235,7 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, patc
         },
 
         storageKey() {
-            return `odoosoup.task.${this.props.record.data.id}`;
+            return `odoosoup.task.${this.props.record.resId}`;
         },
 
         onSave() {
@@ -279,9 +279,9 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, patc
             this.textArea.style.height = `${Math.max(this.textArea.scrollHeight, 50)}px`;
         },
     });
-    patch(KanbanRecord.prototype, "odoosoup.task-notes", {
+    patch(KanbanRecord.prototype, {
         setup() {
-            this._super();
+            super.setup();
             if (this.props.record.resModel !== "project.task") {
                 return;
             }
@@ -313,9 +313,9 @@ function addTaskNotes({ KanbanRecord, FormRenderer, ListRenderer, debounce, patc
         },
     });
 
-    patch(ListRenderer.prototype, "odoosoup.task-notes", {
+    patch(ListRenderer.prototype, {
         setup() {
-            this._super();
+            super.setup();
             if (this.props.list.resModel !== "project.task") {
                 return;
             }
