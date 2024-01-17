@@ -176,7 +176,7 @@ function addCopyIdToTasks({
     });
 }
 
-function openTaskInNewTab({ KanbanRecord, patch, useEffect }) {
+function openTaskInNewTab({ KanbanRecord, patch, useEffect, BoardAction }) {
     patch(KanbanRecord.prototype, {
         setup() {
             super.setup();
@@ -198,6 +198,17 @@ function openTaskInNewTab({ KanbanRecord, patch, useEffect }) {
             params.set("model", "project.task");
             params.set("view_type", "form");
             params.set("id", this.props.record.resId);
+            params.set("active_id", this.props.record.evalContext.project_id);
+
+            let current = this;
+            while (current.__owl__.parent) {
+                current = current.__owl__.parent.component;
+                if (current instanceof BoardAction) {
+                    params.set("action", current.props.action.actionId);
+                    break;
+                }
+            }
+
             let url = `${window.location.origin}/web#`;
             let first = true;
             for (key of [
@@ -370,6 +381,7 @@ odoo.define("odoosoup", [
     const { KanbanRecord } = require("@web/views/kanban/kanban_record");
     const { ListRenderer } = require("@web/views/list/list_renderer");
     const { onRendered, useEffect } = require("@odoo/owl");
+    const { BoardAction } = require("@board/board_action");
 
     const dependencies = {
         ControlPanel,
@@ -380,6 +392,7 @@ odoo.define("odoosoup", [
         onRendered,
         patch,
         useEffect,
+        BoardAction,
     };
 
     odoosoupPatches.forEach((patchFn) => patchFn(dependencies));
