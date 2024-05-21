@@ -2,6 +2,9 @@
 // @name odoosoup
 // @match https://www.odoo.com/web
 // @match https://www.odoo.com/web?*
+// @match https://www.odoo.com/odoo
+// @match https://www.odoo.com/odoo/*
+// @match https://www.odoo.com/odoo?*
 // ==/UserScript==
 
 (function () {
