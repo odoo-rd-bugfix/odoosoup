@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "odoosoup",
   "description": "addons for odoo.com support",
-  "version": "17.2.0",
+  "version": "17.2.1",
   "content_scripts": [
     {
       "world": "MAIN",
