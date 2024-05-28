@@ -192,35 +192,12 @@ function openTaskInNewTab({ KanbanRecord, patch, useEffect }) {
         renderOpenButton() {
             const card = this.rootRef.el;
             card.querySelector(".odoosoup-open-btn")?.remove();
-            const params = new Map(
-                window.location.hash
-                    .slice(1)
-                    .split("&")
-                    .map((e) => e.split("="))
-            );
-            params.set("model", "project.task");
-            params.set("view_type", "form");
-            params.set("id", this.props.record.resId);
-            let url = `${window.location.origin}/web#`;
-            let first = true;
-            for (key of [
-                "cids",
-                "menu_id",
-                "action",
-                "active_id",
-                "model",
-                "view_type",
-                "id",
-            ]) {
-                if (!first) {
-                    url += "&";
-                } else {
-                    first = false;
-                }
-                url += `${key}=${params.get(key)}`;
-            }
+            let project_id = this.props.record['data']['project_id'][0];
+            let task_id = this.props.record.resId;
+            url = `/odoo/${project_id}/tasks/${task_id}`;
             const link = document.createElement("div");
-            link.innerHTML = `<a target="_blank" class="odoosoup-open-btn" href="${url}">Open task</a>`;
+            link.innerHTML = '<a target="_blank" class="odoosoup-open-btn">Open task</a>';
+            link.firstElementChild.setAttribute('href', url);
             card.querySelector(".oe_kanban_content").appendChild(link);
         },
     });
