@@ -8,398 +8,348 @@
 // ==/UserScript==
 
 (function () {
-  function trackOpenedTickets({
-    FormRenderer,
-    KanbanRecord,
-    ListRenderer,
-    patch,
-    useEffect,
-  }) {
-    const localStorageKey = "odoosoup.task.opened";
-    let openedTickets = JSON.parse(localStorage[localStorageKey] || "[]");
-
-    /* track changes from other tabs */
-    window.onstorage = (event) => {
-      if (event.key !== localStorageKey) {
-        return;
-      }
-      openedTickets = JSON.parse(event.newValue || "[]");
-    };
-
-    patch(FormRenderer.prototype, {
-      setup() {
-        super.setup();
-        if (this.props.record.resModel !== "project.task") {
-          return;
-        }
-        useEffect(
-          (id) => {
-            if (!openedTickets.includes(id)) {
-              openedTickets.push(id);
-              localStorage[localStorageKey] = JSON.stringify(openedTickets);
+    async function inject(name, dependencies) {
+        const { promise, resolve } = Promise.withResolvers();
+        odoo.define(
+            name,
+            dependencies.map((e) => e[0]),
+            (require) => {
+                const resolvedDependencies = {};
+                dependencies.forEach(([name, ...required]) => {
+                    const module = require(name);
+                    required.forEach((name) => (resolvedDependencies[name] = module[name]));
+                });
+                resolve(resolvedDependencies);
             }
-          },
-          () => [this.props.record.resId]
         );
-      },
-    });
-
-    patch(KanbanRecord.prototype, {
-      setup() {
-        super.setup();
-        if (this.props.record.resModel !== "project.task") {
-          return;
-        }
-        useEffect(() => this.renderSeenIcon());
-      },
-
-      renderSeenIcon() {
-        if (openedTickets.includes(this.props.record.resId)) {
-          const card = this.rootRef.el;
-          card.querySelectorAll(".odoosoup-eye").forEach((e) => e.remove());
-          const parent = document.createElement("div");
-          parent.classList.add("odoosoup-eye");
-          const eye = document.createElement("i");
-          parent.appendChild(eye);
-          eye.classList.add("fa", "fa-lg", "fa-eye");
-          const target = card.querySelector(".oe_kanban_bottom_left");
-          target.insertBefore(parent, target.firstChild);
-        }
-      },
-    });
-
-    patch(ListRenderer.prototype, {
-      setup() {
-        super.setup();
-        if (this.props.list.resModel !== "project.task") {
-          return;
-        }
-        useEffect(() => this.renderSeenIcon());
-      },
-
-      renderSeenIcon() {
-        this.props.list.records.forEach((record) => {
-          if (openedTickets.includes(record.resId)) {
-            const target = this.rootRef.el.querySelector(
-              `tr[data-id="${record.id}"] td[name="priority"]`
-            );
-            target.querySelectorAll(".odoosoup-eye").forEach((e) => e.remove());
-            const parent = document.createElement("div");
-            parent.classList.add("odoosoup-eye");
-            const eye = document.createElement("i");
-            parent.appendChild(eye);
-            eye.classList.add("fa", "fa-lg", "fa-eye");
-            target.appendChild(parent);
-          }
-        });
-      },
-    });
-  }
-
-  function addCopyIdToTasks({
-    KanbanRecord,
-    ControlPanel,
-    FormRenderer,
-    patch,
-    useEffect,
-  }) {
-    function bindCopyId(element, recordId, classes, onClickedClasses) {
-      element.onclick = (event) => {
-        event.stopPropagation();
-        event.preventDefault();
-        classes.forEach((c) => element.classList.toggle(c, false));
-        onClickedClasses.forEach((c) => element.classList.toggle(c, true));
-        navigator.clipboard.writeText(recordId.toString()).finally(() => {
-          window.setTimeout(() => {
-            classes.forEach((c) => element.classList.toggle(c, true));
-            onClickedClasses.forEach((c) => element.classList.toggle(c, false));
-          }, 500);
-        });
-      };
+        return promise;
     }
 
-    let recordId = null;
-    patch(ControlPanel.prototype, {
-      renderCopyIdButton() {
-        if (!this.root.el) return;
-        const target = this.root.el.querySelector(
-          ".o_control_panel_navigation"
-        );
-        if (this.env.config.viewType !== "form" || !target) return;
-        target
-          .querySelectorAll(".odoosoup-copy-btn")
-          .forEach((e) => e.remove());
-        const button = document.createElement("button");
-        button.classList.add("btn", "btn-outline-primary", "odoosoup-copy-btn");
-        button.textContent = "Copy ID";
-        bindCopyId(
-          button,
-          recordId,
-          ["btn-outline-primary"],
-          ["btn-outline-success"]
-        );
-        target.appendChild(button);
-      },
-
-      setup() {
-        super.setup();
-        if (this.env?.searchModel?.resModel !== "project.task") {
-          return;
-        }
-        useEffect(() => this.renderCopyIdButton());
-      },
-    });
-    patch(FormRenderer.prototype, {
-      setup() {
-        super.setup();
-        if (this.props.record.resModel !== "project.task") {
-          return;
-        }
-
-        useEffect(
-          (id) => {
-            recordId = id;
-          },
-          () => [this.props.record.resId]
-        );
-      },
-    });
-    patch(KanbanRecord.prototype, {
-      setup() {
-        super.setup();
-        if (this.props.record.resModel !== "project.task") {
-          return;
-        }
-        useEffect(() => this.renderCopyIdButton());
-      },
-
-      renderCopyIdButton() {
-        const id = this.props.record.resId;
-        const card = this.rootRef.el;
-        card.querySelector(".odoosoup-copy-btn")?.remove();
-        const copyIcon = document.createElement("i");
-        copyIcon.classList.add("fa", "fa-clipboard");
-        bindCopyId(copyIcon, id, [], ["text-success"]);
-        const wrapper = document.createElement("div");
-        wrapper.classList.add("odoosoup-copy-btn");
-        wrapper.appendChild(copyIcon);
-        const target = card.querySelector(".oe_kanban_bottom_left");
-        target.insertBefore(wrapper, target.firstChild);
-      },
-    });
-  }
-
-  function openTaskInNewTab({ KanbanRecord, patch, useEffect }) {
-    patch(KanbanRecord.prototype, {
-      setup() {
-        super.setup();
-        if (this.props.record.resModel !== "project.task") {
-          return;
-        }
-        useEffect(() => this.renderOpenButton());
-      },
-
-      renderOpenButton() {
-        const card = this.rootRef.el;
-        card.querySelector(".odoosoup-open-btn")?.remove();
-
-        const projectId = this.props.record.data.project_id[0];
-        const taskId = this.props.record.resId;
-        const url = `/odoo/${projectId}/tasks/${taskId}`;
-
-        const link = document.createElement("div");
-        link.innerHTML =
-          '<a target="_blank" class="odoosoup-open-btn">Open task</a>';
-        link.firstElementChild.setAttribute("href", url);
-
-        card.querySelector(".oe_kanban_content").appendChild(link);
-      },
-    });
-  }
-
-  function addTaskNotes({
-    KanbanRecord,
-    FormRenderer,
-    ListRenderer,
-    debounce,
-    patch,
-    useEffect,
-  }) {
-    patch(FormRenderer.prototype, {
-      setup() {
-        super.setup();
-        if (this.props.record.resModel !== "project.task") {
-          return;
-        }
-        this.odooSoupViewRoot = owl.useRef("compiled_view_root");
-        useEffect(() => this.renderTextArea());
-      },
-
-      storageKey() {
-        return `odoosoup.task.${this.props.record.resId}`;
-      },
-
-      onSave() {
-        const text = this.textArea.value.trim();
-        if (text) {
-          localStorage[this.storageKey()] = text;
-        } else {
-          localStorage.removeItem(this.storageKey());
-        }
-      },
-
-      onInput() {
-        this.style.height = "0";
-        this.style.height = `${Math.max(this.scrollHeight, 50)}px`;
-      },
-
-      renderTextArea() {
-        const note = localStorage[this.storageKey()] || "";
-        this.odooSoupViewRoot.el
-          .querySelectorAll(".odoosoup-notes")
-          .forEach((e) => e.remove());
-        this.textArea = document.createElement("textarea");
-        this.textArea.value = note;
-        this.textArea.classList.add(
-          "odoosoup-notes",
-          "border-success",
-          "border",
-          "bg-success-light",
-          "text-900",
-          "overflow-hidden"
-        );
-        this.textArea.style.resize = "none";
-        this.textArea.addEventListener(
-          "input",
-          debounce(this.onSave.bind(this), 125)
-        );
-        this.textArea.addEventListener("blur", this.onSave.bind(this));
-        this.textArea.addEventListener("input", this.onInput);
-        let target = this.odooSoupViewRoot.el.querySelector(".oe_title");
-        if (target) {
-          target.parentNode.insertBefore(this.textArea, target.nextSibling);
-        } else {
-          target = this.odooSoupViewRoot.el.querySelector(".o_form_sheet");
-          target.insertBefore(this.textArea, target.firstChild);
-        }
-        this.textArea.style.height = `${Math.max(
-          this.textArea.scrollHeight,
-          50
-        )}px`;
-      },
-    });
-    patch(KanbanRecord.prototype, {
-      setup() {
-        super.setup();
-        if (this.props.record.resModel !== "project.task") {
-          return;
-        }
-        useEffect(() => this.renderNote());
-      },
-
-      renderNote() {
-        const id = this.props.record.resId;
-        const card = this.rootRef.el.querySelector(`.oe_kanban_card`);
-        card.querySelector(".odoosoup-note")?.remove();
-        const note = localStorage[`odoosoup.task.${id}`];
-        if (!note) {
-          return;
-        }
-        const div = document.createElement("div");
-        div.classList.add(
-          "odoosoup-note",
-          "text-truncate",
-          "border-success",
-          "border",
-          "bg-success-light",
-          "text-900"
-        );
-        div.textContent = note
-          .replace(/^\s+|\s+$/g, "")
-          .replace(/\s*\n\s*/g, "⏎");
-        card.appendChild(div);
-      },
-    });
-
-    patch(ListRenderer.prototype, {
-      setup() {
-        super.setup();
-        if (this.props.list.resModel !== "project.task") {
-          return;
-        }
-        useEffect(() => this.renderNotes());
-      },
-
-      renderNotes() {
-        this.props.list.records.forEach((record) => {
-          const id = record.resId;
-          const note = localStorage[`odoosoup.task.${id}`];
-          if (!note) {
-            return;
-          }
-          const $div = document.createElement("div");
-          $div.classList.add(
-            "odoosoup-note",
-            "text-truncate",
-            "border-success",
-            "border",
-            "bg-success-light",
-            "text-900"
-          );
-          $div.textContent = note
-            .replace(/^\s+|\s+$/g, "")
-            .replace(/\s*\n\s*/g, "⏎");
-          const $row = this.rootRef.el.querySelector(
-            `tr[data-id="${record.id}"]`
-          );
-          $row.querySelector(".odoosoup-note")?.remove();
-          $row.querySelector('td[name="name"]').appendChild($div);
-        });
-      },
-    });
-  }
-
-  const odoosoupPatches = [
-    addCopyIdToTasks,
-    trackOpenedTickets,
-    addTaskNotes,
-    openTaskInNewTab,
-  ];
-
-  odoo.define(
-    "odoosoup",
-    [
-      "@web/core/utils/patch",
-      "@web/core/utils/timing",
-      "@web/views/form/form_renderer",
-      "@web/search/control_panel/control_panel",
-      "@web/views/kanban/kanban_record",
-      "@web/views/list/list_renderer",
-      "@odoo/owl",
-    ],
-    (require) => {
-      const { patch } = require("@web/core/utils/patch");
-      const { debounce } = require("@web/core/utils/timing");
-      const { FormRenderer } = require("@web/views/form/form_renderer");
-      const {
-        ControlPanel,
-      } = require("@web/search/control_panel/control_panel");
-      const { KanbanRecord } = require("@web/views/kanban/kanban_record");
-      const { ListRenderer } = require("@web/views/list/list_renderer");
-      const { onRendered, useEffect } = require("@odoo/owl");
-
-      const dependencies = {
-        ControlPanel,
-        FormRenderer,
-        KanbanRecord,
-        ListRenderer,
-        debounce,
-        onRendered,
+    function patchViews({
+        applyInheritance,
+        KanbanArchParser,
+        FormArchParser,
+        ListArchParser,
         patch,
-        useEffect,
-      };
+        registry,
+    }) {
+        const parser = new DOMParser();
 
-      odoosoupPatches.forEach((patchFn) => patchFn(dependencies));
+        const xpathPatch = () => ({
+            parse(xmlDoc, models, modelName) {
+                const views = registry.category("odoosoup.views").getAll();
+                const matches = views
+                    .filter((edit) => edit.accept(xmlDoc, models, modelName))
+                    .map((edit) => edit.arch);
+                matches.forEach((match) => {
+                    applyInheritance(
+                        xmlDoc,
+                        parser.parseFromString(match, "text/xml").documentElement
+                    );
+                });
+                return super.parse(xmlDoc, models, modelName);
+            },
+        });
+
+        patch(KanbanArchParser.prototype, xpathPatch());
+        patch(FormArchParser.prototype, xpathPatch());
+        patch(ListArchParser.prototype, xpathPatch());
     }
-  );
+
+    function insertOpenedIcon({
+        registry,
+        Component,
+        xml,
+        patch,
+        useService,
+        FormRenderer,
+        useEffect,
+        standardWidgetProps,
+    }) {
+        const taskOpenedService = {
+            start(env) {
+                const localStorageKey = "odoosoup.task.opened";
+                let openedTickets = JSON.parse(localStorage[localStorageKey] || "[]");
+
+                /* track changes from other tabs */
+                window.onstorage = (event) => {
+                    if (event.key !== localStorageKey) {
+                        return;
+                    }
+                    openedTickets = JSON.parse(event.newValue || "[]");
+                };
+
+                function contains(id) {
+                    return openedTickets.includes(id);
+                }
+
+                function add(id) {
+                    if (id && !contains(id)) {
+                        openedTickets.push(id);
+                        localStorage[localStorageKey] = JSON.stringify(openedTickets);
+                    }
+                }
+
+                return { contains, add };
+            },
+        };
+
+        registry.category("services").add("odoosoup.task_opened", taskOpenedService);
+
+        patch(FormRenderer.prototype, {
+            setup() {
+                super.setup();
+                if (this.props.record.resModel !== "project.task") {
+                    return;
+                }
+                this.taskOpened = useService("odoosoup.task_opened");
+                useEffect(
+                    (id) => {
+                        this.taskOpened.add(id);
+                    },
+                    () => [this.props.record.resId]
+                );
+            },
+        });
+
+        class OpenedIcon extends Component {
+            static template = xml`<i t-if="this.taskOpened.contains(this.props.record.resId)" class="fa fa-eye"/>`;
+            static props = { ...standardWidgetProps };
+
+            setup() {
+                this.taskOpened = useService("odoosoup.task_opened");
+            }
+        }
+
+        registry.category("view_widgets").add("odoosoup.opened_icon", {
+            component: OpenedIcon,
+        });
+
+        registry.category("odoosoup.views").add("project.task.kanban.opened", {
+            accept: (xmlDoc, models, modelName) =>
+                modelName === "project.task" &&
+                xmlDoc.getAttribute("js_class") === "project_enterprise_task_kanban",
+            arch: `<t>
+                <xpath expr="//footer/div" position="inside">
+                    <widget name="odoosoup.opened_icon"/>
+                </xpath>
+            </t>`,
+        });
+
+        registry.category("odoosoup.views").add("project.task.list.opened", {
+            accept: (xmlDoc, models, modelName) =>
+                modelName === "project.task" &&
+                xmlDoc.getAttribute("js_class") === "project_enterprise_task_list",
+            arch: `<t>
+                <xpath expr="//field[@name='name']" position="after">
+                    <widget name="odoosoup.opened_icon"/>
+                </xpath>
+            </t>`,
+        });
+    }
+
+    function insertCopyButton({ Component, xml, registry, CopyButton, standardWidgetProps }) {
+        class CopyIdButton extends Component {
+            static template = xml`<CopyButton
+                t-if="this.props.record.resId"
+                className="isForm ? 'btn btn-secondary' : ''"
+                content="this.props.record.resId.toString()"
+                successText="'Copied ID'"
+                copyText="isForm ? 'Copy ID' : ''"
+            />`;
+            static components = { CopyButton };
+            static props = { ...standardWidgetProps };
+
+            get isForm() {
+                return this.env.config.viewType === "form";
+            }
+        }
+
+        registry.category("view_widgets").add("odoosoup.copy_button", {
+            component: CopyIdButton,
+        });
+
+        registry.category("odoosoup.views").add("project.task.form.copy_id", {
+            accept: (xmlDoc, models, modelName) =>
+                modelName === "project.task" &&
+                xmlDoc.getAttribute("js_class") === "project_task_form",
+            arch: `<t>
+                <xpath expr="//field[@name='stage_id']" position="before">
+                    <widget name="odoosoup.copy_button"/>
+                </xpath>
+            </t>`,
+        });
+
+        registry.category("odoosoup.views").add("project.task.kanban.copy_id", {
+            accept: (xmlDoc, models, modelName) =>
+                modelName === "project.task" &&
+                xmlDoc.getAttribute("js_class") === "project_enterprise_task_kanban",
+            arch: `<t>
+                <xpath expr="//footer/div" position="inside">
+                    <widget name="odoosoup.copy_button"/>
+                </xpath>
+            </t>`,
+        });
+    }
+
+    function insertNotes({
+        Component,
+        xml,
+        standardWidgetProps,
+        registry,
+        useRef,
+        debounce,
+        useEffect,
+        onWillUpdateProps,
+    }) {
+        class Notes extends Component {
+            static props = { ...standardWidgetProps };
+            static template = xml`<t>
+                <textarea
+                    t-if="!props.readonly"
+                    t-ref="input"
+                    class="border-success border bg-success-light text-900 overflow-hidden"
+                    style="resize: none"
+                    t-on-input="this.onInput"
+                    t-on-blur="this.save"
+                    t-att-value="this.value"
+                />
+                <div
+                    t-else=""
+                    t-if="value"
+                    t-out="preview"
+                    class="text-truncate border-success border bg-success-light text-900"
+                />
+            </t>`;
+
+            setup() {
+                this.input = useRef("input");
+                this.value = localStorage[this.storageKey(this.props.record.resId)] || "";
+                this.debouncedSave = debounce(this.save.bind(this), 125);
+                useEffect(() => {
+                    if (!this.props.readonly) {
+                        this.resize();
+                    }
+                });
+                onWillUpdateProps((nextProps) => {
+                    if (nextProps.record.resId !== this.props.record.resId) {
+                        this.value = localStorage[this.storageKey(nextProps.record.resId)] || "";
+                    }
+                });
+            }
+
+            storageKey(resId) {
+                return `odoosoup.task.${resId}`;
+            }
+
+            resize() {
+                this.input.el.style.height = "0";
+                this.input.el.style.height = `${Math.max(this.input.el.scrollHeight, 50)}px`;
+            }
+
+            onInput() {
+                this.resize();
+                this.debouncedSave();
+            }
+
+            save() {
+                this.value = this.input.el.value.trim();
+                if (this.value) {
+                    localStorage[this.storageKey(this.props.record.resId)] = this.value;
+                } else {
+                    localStorage.removeItem(this.storageKey(this.props.record.resId));
+                }
+            }
+
+            get preview() {
+                if (!this.value) {
+                    return;
+                }
+                return this.value.replace(/^\s+|\s+$/g, "").replace(/\s*\n\s*/g, "⏎");
+            }
+        }
+
+        registry.category("view_widgets").add("odoosoup.notes", {
+            component: Notes,
+        });
+
+        registry.category("odoosoup.views").add("project.task.form.notes", {
+            accept: (xmlDoc, models, modelName) =>
+                modelName === "project.task" &&
+                xmlDoc.getAttribute("js_class") === "project_task_form",
+            arch: `<t>
+                <xpath expr="//div[hasclass('oe_title')]" position="after">
+                    <widget name="odoosoup.notes"/>
+                </xpath>
+            </t>`,
+            });
+
+        registry.category("odoosoup.views").add("project.task.list.notes", {
+            accept: (xmlDoc, models, modelName) =>
+                modelName === "project.task" &&
+                xmlDoc.getAttribute("js_class") === "project_enterprise_task_list",
+            arch: `<t>
+                <xpath expr="//field[@name='name']" position="after">
+                    <widget name="odoosoup.notes"/>
+                </xpath>
+            </t>`,
+        });
+
+        registry.category("odoosoup.views").add("project.task.kanban.notes", {
+            accept: (xmlDoc, models, modelName) =>
+                modelName === "project.task" &&
+                xmlDoc.getAttribute("js_class") === "project_enterprise_task_kanban",
+            arch: `<t>
+                <xpath expr="//field[@name='displayed_image_id']" position="after">
+                    <widget name="odoosoup.notes"/>
+                </xpath>
+            </t>`,
+        });
+    }
+
+    function openTaskInNewTab({ registry, xml, Component, standardWidgetProps }) {
+        class OpenInNewTab extends Component {
+            static props = { ...standardWidgetProps };
+            static template = xml`<a
+                target="_blank"
+                t-attf-href="/odoo/#{props.record.data.project_id[0]}/tasks/#{props.record.resId}"
+            >Open task</a>`;
+        }
+
+        registry.category("view_widgets").add("odoosoup.open_task", {
+            component: OpenInNewTab,
+        });
+
+        registry.category("odoosoup.views").add("project.task.kanban.open_task", {
+            accept: (xmlDoc, models, modelName) =>
+                modelName === "project.task" &&
+                xmlDoc.getAttribute("js_class") === "project_enterprise_task_kanban",
+            arch: `<t>
+                <xpath expr="//field[@name='displayed_image_id']" position="after">
+                    <widget name="odoosoup.open_task"/>
+                </xpath>
+            </t>`,
+        });
+    }
+
+    const patches = [insertOpenedIcon, insertCopyButton, patchViews, insertNotes, openTaskInNewTab];
+
+    inject("odoosoup", [
+        ["@odoo/owl", "xml", "Component", "useEffect", "useRef", "onWillUpdateProps"],
+        ["@web/core/registry", "registry"],
+        ["@web/core/utils/hooks", "useService"],
+        ["@web/core/templates", "registerTemplateExtension"],
+        ["@web/core/utils/patch", "patch"],
+        ["@web/views/kanban/kanban_arch_parser", "KanbanArchParser"],
+        ["@web/views/form/form_arch_parser", "FormArchParser"],
+        ["@web/views/list/list_arch_parser", "ListArchParser"],
+        ["@web/views/form/form_renderer", "FormRenderer"],
+        ["@web/core/copy_button/copy_button", "CopyButton"],
+        ["@web/views/widgets/standard_widget_props", "standardWidgetProps"],
+        ["@web/core/template_inheritance", "applyInheritance"],
+        ["@web/core/utils/timing", "debounce"],
+    ]).then((dependencies) => {
+        patches.forEach((patch) => patch.call(this, dependencies));
+    });
+
 })();
