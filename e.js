@@ -208,6 +208,7 @@
                 <textarea
                     t-if="!props.readonly"
                     t-ref="input"
+                    id="notes_textarea"
                     class="border-success border bg-success-light text-900 overflow-hidden"
                     style="resize: none"
                     t-on-input="this.onInput"
@@ -278,7 +279,7 @@
                 modelName === "project.task" &&
                 xmlDoc.getAttribute("js_class") === "project_task_form",
             arch: `<t>
-                <xpath expr="//div[hasclass('oe_title')]" position="after">
+                <xpath expr="//field[@name='name']/parent::div/parent::h1" position="after">
                     <widget name="odoosoup.notes"/>
                 </xpath>
             </t>`,
