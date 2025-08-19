@@ -210,7 +210,7 @@
                     t-ref="input"
                     id="notes_textarea"
                     class="border-success border bg-success-light text-900 overflow-hidden"
-                    style="resize: none"
+                    t-attf-style="resize: none;{{ isCompact ? 'max-width: 200px': '' }}"
                     t-on-input="this.onInput"
                     t-on-blur="this.save"
                     t-att-value="this.value"
@@ -219,6 +219,7 @@
                     t-else=""
                     t-if="value"
                     t-out="preview"
+                    t-attf-style="{{ isCompact ? 'max-width: 200px': '' }}"
                     class="text-truncate border-success border bg-success-light text-900"
                 />
             </t>`;
@@ -237,6 +238,10 @@
                         this.value = localStorage[this.storageKey(nextProps.record.resId)] || "";
                     }
                 });
+            }
+
+            get isCompact() {
+                return this.env.config?.viewType === "list";
             }
 
             storageKey(resId) {
