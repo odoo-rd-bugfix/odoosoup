@@ -47,6 +47,9 @@
                         parser.parseFromString(match, "text/xml").documentElement
                     );
                 });
+                if (matches.length) {
+                    xmlDoc.querySelectorAll('widget[name^="odoosoup"]').forEach(el => el.removeAttribute("t-translation-context"))
+                }
                 return super.parse(xmlDoc, models, modelName);
             },
         });
@@ -284,7 +287,7 @@
                 modelName === "project.task" &&
                 xmlDoc.getAttribute("js_class") === "project_task_form",
             arch: `<t>
-                <xpath expr="//field[@name='name']/parent::div/parent::h1" position="after">
+                <xpath expr="//field[@name='name']/parent::h1/parent::div" position="after">
                     <widget name="odoosoup.notes"/>
                 </xpath>
             </t>`,
