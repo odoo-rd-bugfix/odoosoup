@@ -44,12 +44,10 @@
                 matches.forEach((match) => {
                     applyInheritance(
                         xmlDoc,
-                        parser.parseFromString(match, "text/xml").documentElement
+                        parser.parseFromString(match, "text/xml").documentElement,
+                        "/odoosoup/static/src/e.js"
                     );
                 });
-                if (matches.length) {
-                    xmlDoc.querySelectorAll('widget[name^="odoosoup"]').forEach(el => el.removeAttribute("t-translation-context"))
-                }
                 return super.parse(xmlDoc, models, modelName);
             },
         });
@@ -291,7 +289,7 @@
                     <widget name="odoosoup.notes"/>
                 </xpath>
             </t>`,
-            });
+        });
 
         registry.category("odoosoup.views").add("project.task.list.notes", {
             accept: (xmlDoc, models, modelName) =>
@@ -347,7 +345,6 @@
         ["@odoo/owl", "xml", "Component", "useEffect", "useRef", "onWillUpdateProps"],
         ["@web/core/registry", "registry"],
         ["@web/core/utils/hooks", "useService"],
-        ["@web/core/templates", "registerTemplateExtension"],
         ["@web/core/utils/patch", "patch"],
         ["@web/views/kanban/kanban_arch_parser", "KanbanArchParser"],
         ["@web/views/form/form_arch_parser", "FormArchParser"],
@@ -360,5 +357,4 @@
     ]).then((dependencies) => {
         patches.forEach((patch) => patch.call(this, dependencies));
     });
-
 })();
