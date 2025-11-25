@@ -314,32 +314,7 @@
         });
     }
 
-    function openTaskInNewTab({ registry, xml, Component, standardWidgetProps }) {
-        class OpenInNewTab extends Component {
-            static props = { ...standardWidgetProps };
-            static template = xml`<a
-                target="_blank"
-                t-attf-href="/odoo/#{props.record.data.project_id[0]}/tasks/#{props.record.resId}"
-            >Open task</a>`;
-        }
-
-        registry.category("view_widgets").add("odoosoup.open_task", {
-            component: OpenInNewTab,
-        });
-
-        registry.category("odoosoup.views").add("project.task.kanban.open_task", {
-            accept: (xmlDoc, models, modelName) =>
-                modelName === "project.task" &&
-                xmlDoc.getAttribute("js_class") === "project_enterprise_task_kanban",
-            arch: `<t>
-                <xpath expr="//field[@name='displayed_image_id']" position="after">
-                    <widget name="odoosoup.open_task"/>
-                </xpath>
-            </t>`,
-        });
-    }
-
-    const patches = [insertOpenedIcon, insertCopyButton, patchViews, insertNotes, openTaskInNewTab];
+    const patches = [insertOpenedIcon, insertCopyButton, patchViews, insertNotes];
 
     inject("odoosoup", [
         ["@odoo/owl", "xml", "Component", "useEffect", "useRef", "onWillUpdateProps"],
